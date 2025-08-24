@@ -1,97 +1,155 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>حاسبة أبو نجد للتداول</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: 'Tahoma', sans-serif;
-      background-color: #1e1e2f;
-      color: #fff;
-      padding: 20px;
-      text-align: right;
-    }
-    h1 {
-      color: #00ffcc;
-    }
-    label {
-      display: block;
-      margin: 12px 0 4px;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 10px;
-      font-size: 1em;
-      margin-bottom: 15px;
-      border-radius: 5px;
-      border: none;
-    }
-    button {
-      background-color: #00ffcc;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #00e6b8;
-    }
-    .result {
-      margin-top: 20px;
-      font-size: 1.2em;
-      color: #ffd700;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📊 حاسبة أبو نجد للتداول</title>
+<style>
+  :root{
+    --bg:#0e1220;
+    --panel:#171c2f;
+    --accent:#00e6d2;
+    --text:#e9eef7;
+    --muted:#9aa4b2;
+    --danger:#ff5c7c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif}
+  .wrap{max-width:760px;margin:0 auto;padding:20px}
+  h1{text-align:center;color:var(--accent);font-size:1.6rem;margin-bottom:20px}
+  .card{background:var(--panel);padding:16px;border-radius:12px;margin-bottom:18px}
+  label{display:block;font-weight:bold;margin-bottom:6px}
+  input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #2a314d;background:#0b1020;color:var(--text);font-size:15px}
+  button{width:100%;padding:12px;margin-top:14px;border:0;border-radius:10px;background:var(--accent);color:#001a17;font-weight:bold;font-size:1rem;cursor:pointer}
+  button:active{transform:scale(.97)}
+  .res{line-height:1.9}
+  .pill{display:inline-block;padding:.2rem .5rem;border-radius:999px;background:#0b1020;border:1px solid #2a314d;color:var(--muted);font-size:.8rem;margin-inline-start:.4rem}
+  .grid-3{display:grid;grid-template-columns:1fr;gap:10px}
+  @media (min-width:640px){.grid-3{grid-template-columns:repeat(3,1fr)}}
+  .hint{font-size:.8rem;color:var(--muted);margin-top:4px}
+  .err{color:var(--danger);font-weight:bold}
+  .ok{color:#8ef3ff;font-weight:bold}
+</style>
 </head>
 <body>
-  <h1>حاسبة أبو نجد للتداول 📊</h1>
+<div class="wrap">
+  <h1>📊 حاسبة أبو نجد للتداول</h1>
 
-  <label for="capital">💰 رأس المال:</label>
-  <input type="number" id="capital" placeholder="مثال: 200">
+  <div class="card">
+    <label>💰 رأس المال</label>
+    <input id="capital" type="number" placeholder="مثال: 800">
 
-  <label for="leverage">📈 الرافعة المالية:</label>
-  <input type="number" id="leverage" placeholder="مثال: 50">
+    <label>📈 الرافعة (Leverage)</label>
+    <input id="leverage" type="number" placeholder="مثال: 20">
 
-  <label for="entry">💵 سعر الدخول:</label>
-  <input type="number" id="entry" placeholder="مثال: 2500">
+    <label>💵 سعر الدخول</label>
+    <input id="entryPrice" type="number" placeholder="مثال: 2500">
 
-  <label for="profit">🎯 الربح المطلوب:</label>
-  <input type="number" id="profit" placeholder="مثال: 36">
+    <label>🎯 الربح المطلوب (بالدولار)</label>
+    <input id="targetProfit" type="number" placeholder="مثال: 50">
 
-  <label for="type">نوع الصفقة:</label>
-  <select id="type">
-    <option value="long">✅ لونق</option>
-    <option value="short">❌ شورت</option>
-  </select>
+    <label>نوع الصفقة</label>
+    <select id="positionType">
+      <option value="long">لونق (شراء)</option>
+      <option value="short">شورت (بيع)</option>
+    </select>
 
-  <button onclick="calculate()">احسب الآن</button>
+    <label>🧾 أمر الدخول</label>
+    <select id="entrySide">
+      <option value="taker">ماركت (Taker)</option>
+      <option value="maker">ليمِت (Maker)</option>
+    </select>
 
-  <div class="result" id="output"></div>
+    <label>🧾 أمر الخروج</label>
+    <select id="exitSide">
+      <option value="taker">ماركت (Taker)</option>
+      <option value="maker">ليمِت (Maker)</option>
+    </select>
 
-  <script>
-    function calculate() {
-      const capital = parseFloat(document.getElementById('capital').value);
-      const leverage = parseFloat(document.getElementById('leverage').value);
-      const entry = parseFloat(document.getElementById('entry').value);
-      const profit = parseFloat(document.getElementById('profit').value);
-      const type = document.getElementById('type').value;
+    <label>نسبة رسوم Taker %</label>
+    <input id="takerPct" type="number" step="0.001" value="0.05">
 
-      if (capital && leverage && entry && profit) {
-        const move = (profit * entry) / (leverage * capital);
-        const liquidationMove = entry / leverage;
-        let liquidationPrice;
+    <label>نسبة رسوم Maker %</label>
+    <input id="makerPct" type="number" step="0.001" value="0.02">
 
-        if (type === 'long') {
-          liquidationPrice = entry - liquidationMove;
-        } else {
-          liquidationPrice = entry + liquidationMove;
-        }
+    <label>خصم BNB (%)</label>
+    <input id="bnbDiscount" type="number" value="10">
 
-        document.getElementById('output').innerHTML =
-          `📈 تحتاج السعر يتحرك: <strong>${move.toFixed(2)} دولار</strong> لتحقيق ${profit} دولار ربح.<br><br>` +
-          `⚠️ سعر التلكود (${type === 'long' ? 'لونق' : 'شورت'}): <strong>${liquidationPrice.toFixed(2)} دولار</strong>`;
-      } else {
-        document.getElementById('output').innerHTML = "⚠️ يرجى تعبئة جميع الحقول.";
-      }
-    }
-  </script>
+    <label>Funding Rate لكل 8 ساعات (%)</label>
+    <input id="fundingPct" type="number" step="0.001" value="0">
+
+    <label>عدد فترات التمويل</label>
+    <input id="fundingPeriods" type="number" value="0">
+
+    <button onclick="calc()">احسب الآن</button>
+  </div>
+
+  <div class="card">
+    <h3>النتائج</h3>
+    <div id="out" class="res">—</div>
+  </div>
+</div>
+
+<script>
+function num(v){return Number(v)||0;}
+function pctToRate(p){return p/100;}
+
+function calc(){
+  const capital=num(document.getElementById("capital").value);
+  const leverage=num(document.getElementById("leverage").value);
+  const entryPrice=num(document.getElementById("entryPrice").value);
+  const targetProfit=num(document.getElementById("targetProfit").value);
+  const posType=document.getElementById("positionType").value;
+  const entrySide=document.getElementById("entrySide").value;
+  const exitSide=document.getElementById("exitSide").value;
+  const takerPct=num(document.getElementById("takerPct").value);
+  const makerPct=num(document.getElementById("makerPct").value);
+  const bnbDisc=num(document.getElementById("bnbDiscount").value);
+  const fundingPct=num(document.getElementById("fundingPct").value);
+  const fundingPeriods=num(document.getElementById("fundingPeriods").value);
+
+  const notional=capital*leverage;
+  const takerRate=pctToRate(takerPct)*(1-bnbDisc/100);
+  const makerRate=pctToRate(makerPct)*(1-bnbDisc/100);
+  const entryRate=(entrySide==="taker")?takerRate:makerRate;
+  const exitRate=(exitSide==="taker")?takerRate:makerRate;
+
+  const entryFee=notional*entryRate;
+  const exitFee=notional*exitRate;
+  const fundingFee=notional*pctToRate(fundingPct)*fundingPeriods;
+
+  const totalFees=entryFee+exitFee+fundingFee;
+  const requiredProfit=targetProfit+totalFees;
+  const priceChangeRatio=requiredProfit/notional;
+
+  let exitPrice;
+  if(posType==="long"){
+    exitPrice=entryPrice*(1+priceChangeRatio);
+  }else{
+    exitPrice=entryPrice*(1-priceChangeRatio);
+  }
+
+  const breakEven=(posType==="long")?entryPrice*(1+totalFees/notional):entryPrice*(1-totalFees/notional);
+
+  document.getElementById("out").innerHTML=`
+    <div class="grid-3">
+      <div><span class="pill">قيمة المركز</span><div class="ok">${notional.toFixed(2)} $</div></div>
+      <div><span class="pill">رسوم الدخول</span><div>${entryFee.toFixed(2)} $</div></div>
+      <div><span class="pill">رسوم الخروج</span><div>${exitFee.toFixed(2)} $</div></div>
+    </div>
+    <div class="grid-3" style="margin-top:10px">
+      <div><span class="pill">إجمالي الرسوم</span><div>${totalFees.toFixed(2)} $</div></div>
+      <div><span class="pill">Funding</span><div>${fundingFee.toFixed(2)} $</div></div>
+      <div><span class="pill">الربح المطلوب</span><div>${targetProfit.toFixed(2)} $</div></div>
+    </div>
+    <hr style="border:0;border-top:1px solid #2a314d;margin:14px 0">
+    <div class="grid-3">
+      <div><span class="pill">نسبة التغير المطلوبة</span><div>${(priceChangeRatio*100).toFixed(4)} %</div></div>
+      <div><span class="pill">سعر الخروج المطلوب</span><div class="ok">${exitPrice.toFixed(2)}</div></div>
+      <div><span class="pill">سعر التعادل</span><div>${breakEven.toFixed(2)}</div></div>
+    </div>
+  `;
+}
+</script>
 </body>
 </html>
